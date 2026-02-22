@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Multitracks from "./pages/Multitracks";
 import MultitrackForm from "./pages/MultitrackForm";
 import Escalas from "./pages/Escalas";
+import EscalaForm from "./pages/EscalaForm";
 import Equipes from "./pages/Equipes";
 import EquipeForm from "./pages/EquipeForm";
 import Usuarios from "./pages/Usuarios";
@@ -49,6 +50,22 @@ const App = () => (
                 }
               />
               <Route path="/escalas" element={<Escalas />} />
+              <Route
+                path="/escalas/nova"
+                element={
+                  <ProtectedRoute allowedRoles={['dm', 'admin']}>
+                    <EscalaForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/escalas/:id/editar"
+                element={
+                  <ProtectedRoute allowedRoles={['dm', 'admin']}>
+                    <EscalaForm />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/equipes" element={<Equipes />} />
               <Route
                 path="/equipes/nova"
