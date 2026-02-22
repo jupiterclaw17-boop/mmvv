@@ -167,22 +167,29 @@ const Escalas = () => {
                   <TableCell>{row.team_name}</TableCell>
                   <TableCell>{row.worship_leader_name}</TableCell>
                   <TableCell>{row.dm_name || '—'}</TableCell>
-                  <TableCell className="max-w-[250px]">
+                  <TableCell>
                     {row.song_names.length > 0 ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="block truncate cursor-default text-sm">
-                            {row.song_names.join(', ')}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <ul className="list-disc pl-4 space-y-0.5">
-                            {row.song_names.map((name, i) => (
-                              <li key={i}>{name}</li>
-                            ))}
-                          </ul>
-                        </TooltipContent>
-                      </Tooltip>
+                      <div className="flex flex-col gap-1">
+                        {row.song_names.map((name, i) => {
+                          const colors = [
+                            'bg-purple-500/15 text-purple-400',
+                            'bg-sky-500/15 text-sky-400',
+                            'bg-emerald-500/15 text-emerald-400',
+                            'bg-amber-500/15 text-amber-400',
+                            'bg-rose-500/15 text-rose-400',
+                            'bg-indigo-500/15 text-indigo-400',
+                            'bg-teal-500/15 text-teal-400',
+                          ];
+                          return (
+                            <span
+                              key={i}
+                              className={`inline-block w-fit rounded-full px-2 py-0.5 text-[11px] font-medium leading-tight ${colors[i % colors.length]}`}
+                            >
+                              {name}
+                            </span>
+                          );
+                        })}
+                      </div>
                     ) : '—'}
                   </TableCell>
                   <TableCell className="max-w-[200px]">
