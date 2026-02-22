@@ -10,7 +10,7 @@ import { storageService } from '@/services/storageService';
 import { logAudit } from '@/services/logService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Pencil, Trash2, Download, Search, Music, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Download, Search, Music, Loader2, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -22,6 +22,9 @@ import {
 import {
   Tooltip, TooltipContent, TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
 
 const client = supabase as any;
 
@@ -46,6 +49,7 @@ const Multitracks = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<MultitrackRow | null>(null);
+  const [youtubeTarget, setYoutubeTarget] = useState<MultitrackRow | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const canWrite = profile?.role === 'admin' || profile?.role === 'dm';
@@ -129,6 +133,16 @@ const Multitracks = () => {
     window.open(url, '_blank');
   };
 
+  /** Extract YouTube embed ID from various URL formats */
+  const getYoutubeEmbedUrl = (url: string): string | null => {
+    try {
+      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+      return match ? `https://www.youtube.com/embed/${match[1]}?autoplay=1` : null;
+    } catch {
+      return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -163,6 +177,7 @@ const Multitracks = () => {
               <TableHead>Tom</TableHead>
               <TableHead>BPM</TableHead>
               <TableHead>Arquivo</TableHead>
+              <TableHead>YouTube</TableHead>
               <TableHead>Observações</TableHead>
               {canWrite && <TableHead className="w-24">Ações</TableHead>}
             </TableRow>
@@ -170,14 +185,14 @@ const Multitracks = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={canWrite ? 7 : 6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={canWrite ? 8 : 7} className="text-center py-8 text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={canWrite ? 7 : 6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={canWrite ? 8 : 7} className="text-center py-8 text-muted-foreground">
                   <Music className="h-8 w-8 mx-auto mb-2 opacity-40" />
                   Nenhum multitrack encontrado.
                 </TableCell>
@@ -200,6 +215,16 @@ const Multitracks = () => {
                         className="inline-flex items-center gap-1 text-primary hover:underline text-sm"
                       >
                         <Download className="h-3.5 w-3.5" /> Download
+                      </button>
+                    ) : '—'}
+                  </TableCell>
+                  <TableCell>
+                    {row.youtube_version_url ? (
+                      <button
+                        onClick={() => setYoutubeTarget(row)}
+                        className="inline-flex items-center gap-1 text-rose-400 hover:text-rose-300 text-sm transition-colors"
+                      >
+                        <Play className="h-3.5 w-3.5" /> Assistir
                       </button>
                     ) : '—'}
                   </TableCell>
@@ -242,7 +267,41 @@ const Multitracks = () => {
         </Table>
       </div>
 
-      {/* Delete confirmation */}
+      {/* YouTube modal */}
+      <Dialog open={!!youtubeTarget} onOpenChange={() => setYoutubeTarget(null)}>
+        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
+          <DialogHeader className="p-4 pb-0">
+            <DialogTitle className="text-base">
+              {youtubeTarget?.song_name} — {youtubeTarget?.artist_name}
+            </DialogTitle>
+          </DialogHeader>
+          {youtubeTarget?.youtube_version_url && (
+            <div className="aspect-video w-full">
+              {getYoutubeEmbedUrl(youtubeTarget.youtube_version_url) ? (
+                <iframe
+                  src={getYoutubeEmbedUrl(youtubeTarget.youtube_version_url)!}
+                  className="h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title={youtubeTarget.song_name}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                  <a
+                    href={youtubeTarget.youtube_version_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Abrir no YouTube
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
