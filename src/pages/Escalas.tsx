@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { logAudit } from '@/services/logService';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Loader2, CalendarDays, Eye, Music, Download } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, CalendarDays, Eye, Music, Download, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -63,6 +63,7 @@ const Escalas = () => {
   const [viewMultitracks, setViewMultitracks] = useState<MultitrackInfo[]>([]);
   const [allMultitracks, setAllMultitracks] = useState<MultitrackInfo[]>([]);
   const [deleting, setDeleting] = useState(false);
+  const [filterMonth, setFilterMonth] = useState<string>('');
 
   const canWrite = profile?.role === 'admin' || profile?.role === 'dm';
   const canDelete = profile?.role === 'admin';
@@ -162,6 +163,19 @@ const Escalas = () => {
 
   const periodLabel = (p: string) => PERIODS.find((o) => o.value === p)?.label || p;
 
+  // Build month options from data
+  const monthOptions = Array.from(
+    new Set(rows.map((r) => r.service_date.substring(0, 7)))
+  ).sort((a, b) => b.localeCompare(a)).map((ym) => {
+    const [y, m] = ym.split('-');
+    const label = format(new Date(Number(y), Number(m) - 1), "MMMM 'de' yyyy", { locale: ptBR });
+    return { value: ym, label: label.charAt(0).toUpperCase() + label.slice(1) };
+  });
+
+  const filteredRows = filterMonth
+    ? rows.filter((r) => r.service_date.startsWith(filterMonth))
+    : rows;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -173,6 +187,28 @@ const Escalas = () => {
           <Button onClick={() => navigate('/escalas/nova')}>
             <Plus className="mr-2 h-4 w-4" /> Nova Escala
           </Button>
+        )}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Filter className="h-4 w-4 text-muted-foreground" />
+        <select
+          value={filterMonth}
+          onChange={(e) => setFilterMonth(e.target.value)}
+          className="rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="">Todos os meses</option>
+          {monthOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        {filterMonth && (
+          <button
+            onClick={() => setFilterMonth('')}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Limpar filtro
+          </button>
         )}
       </div>
 
@@ -197,7 +233,7 @@ const Escalas = () => {
                   <Loader2 className="h-5 w-5 animate-spin inline mr-2" />Carregando...
                 </TableCell>
               </TableRow>
-            ) : rows.length === 0 ? (
+            ) : filteredRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   <CalendarDays className="h-8 w-8 mx-auto mb-2 opacity-40" />
@@ -205,7 +241,7 @@ const Escalas = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row) => (
+              filteredRows.map((row) => (
                 <TableRow key={row.id} className="hover:bg-table-row-hover">
                   <TableCell className="font-medium whitespace-nowrap">{formatDate(row.service_date)}</TableCell>
                   <TableCell>
