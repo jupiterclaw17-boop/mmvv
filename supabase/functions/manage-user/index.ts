@@ -82,7 +82,10 @@ serve(async (req) => {
 
       if (createError) {
         console.error("Error creating user:", createError);
-        return new Response(JSON.stringify({ error: "Erro ao criar usuário: " + createError.message }), {
+        const safeMsg = createError.message?.includes('already') 
+          ? 'Este e-mail já está cadastrado.' 
+          : 'Erro ao criar usuário. Tente novamente.';
+        return new Response(JSON.stringify({ error: safeMsg }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -179,7 +182,8 @@ serve(async (req) => {
       const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user_id);
 
       if (deleteError) {
-        return new Response(JSON.stringify({ error: "Erro ao deletar usuário: " + deleteError.message }), {
+        console.error("Error deleting user:", deleteError);
+        return new Response(JSON.stringify({ error: "Erro ao deletar usuário. Tente novamente." }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
