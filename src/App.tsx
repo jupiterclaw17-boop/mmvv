@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import Login from "./pages/Login";
 import Multitracks from "./pages/Multitracks";
+import MultitrackForm from "./pages/MultitrackForm";
 import Escalas from "./pages/Escalas";
 import Equipes from "./pages/Equipes";
 import EquipeForm from "./pages/EquipeForm";
@@ -31,6 +32,22 @@ const App = () => (
             <Route element={<AppLayout />}>
               <Route path="/" element={<Navigate to="/multitracks" replace />} />
               <Route path="/multitracks" element={<Multitracks />} />
+              <Route
+                path="/multitracks/novo"
+                element={
+                  <ProtectedRoute allowedRoles={['dm', 'admin']}>
+                    <MultitrackForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/multitracks/:id/editar"
+                element={
+                  <ProtectedRoute allowedRoles={['dm', 'admin']}>
+                    <MultitrackForm />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/escalas" element={<Escalas />} />
               <Route path="/equipes" element={<Equipes />} />
               <Route
