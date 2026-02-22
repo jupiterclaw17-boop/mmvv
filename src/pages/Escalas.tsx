@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { logAudit } from '@/services/logService';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Loader2, CalendarDays, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, CalendarDays, Eye, Music, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -31,8 +31,14 @@ import { ptBR } from 'date-fns/locale';
 const client = supabase as any;
 
 interface SongInfo {
+  song_id: string;
   name: string;
   key: string;
+}
+
+interface MultitrackInfo {
+  song_id: string;
+  storage_url: string | null;
 }
 
 interface ServiceRow {
@@ -54,6 +60,7 @@ const Escalas = () => {
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<ServiceRow | null>(null);
   const [viewTarget, setViewTarget] = useState<ServiceRow | null>(null);
+  const [viewMultitracks, setViewMultitracks] = useState<MultitrackInfo[]>([]);
   const [deleting, setDeleting] = useState(false);
 
   const canWrite = profile?.role === 'admin' || profile?.role === 'dm';
@@ -64,7 +71,7 @@ const Escalas = () => {
 
     const { data, error } = await client
       .from('services')
-      .select('*, team:team_id(name), worship_leader:worship_leader_id(full_name), dm:dm_id(full_name), service_songs(song_key, song:song_id(name))')
+      .select('*, team:team_id(name), worship_leader:worship_leader_id(full_name), dm:dm_id(full_name), service_songs(song_id, song_key, song:song_id(name))')
       .order('service_date', { ascending: false });
 
     if (!error && data) {
@@ -78,13 +85,28 @@ const Escalas = () => {
         notes: r.notes,
         songs: (r.service_songs || [])
           .filter((ss: any) => ss.song?.name)
-          .map((ss: any) => ({ name: ss.song.name, key: ss.song_key })),
+          .map((ss: any) => ({ song_id: ss.song_id || ss.song?.id, name: ss.song.name, key: ss.song_key })),
       })));
     }
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const openView = async (row: ServiceRow) => {
+    setViewTarget(row);
+    setViewMultitracks([]);
+    if (row.songs.length > 0) {
+      const songIds = row.songs.map((s) => s.song_id).filter(Boolean);
+      if (songIds.length > 0) {
+        const { data } = await client
+          .from('multitracks')
+          .select('song_id, storage_url')
+          .in('song_id', songIds);
+        if (data) setViewMultitracks(data as MultitrackInfo[]);
+      }
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteTarget || !profile) return;
@@ -216,7 +238,7 @@ const Escalas = () => {
                   <TableCell>
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => setViewTarget(row)}
+                          onClick={() => openView(row)}
                           className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                           title="Visualizar"
                         >
@@ -294,13 +316,29 @@ const Escalas = () => {
                         'bg-indigo-500/15 text-indigo-400',
                         'bg-teal-500/15 text-teal-400',
                       ];
+                      const mt = viewMultitracks.find((m) => m.song_id === song.song_id && m.storage_url);
                       return (
-                        <span
-                          key={i}
-                          className={`inline-block w-fit rounded-full px-2.5 py-1 text-xs font-medium ${colors[i % colors.length]}`}
-                        >
-                          {song.name} <span className="opacity-60">({song.key})</span>
-                        </span>
+                        <div key={i} className="flex items-center gap-2">
+                          <span
+                            className={`inline-block w-fit rounded-full px-2.5 py-1 text-xs font-medium ${colors[i % colors.length]}`}
+                          >
+                            {song.name} <span className="opacity-60">({song.key})</span>
+                          </span>
+                          {mt?.storage_url && (
+                            <a
+                              href={mt.storage_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download
+                              className="flex items-center gap-1 rounded-full bg-primary/15 text-primary px-2 py-0.5 text-[11px] font-medium hover:bg-primary/25 transition-colors"
+                              title="Baixar Multitrack"
+                            >
+                              <Music className="h-3 w-3" />
+                              Multitrack
+                              <Download className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
