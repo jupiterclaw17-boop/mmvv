@@ -147,6 +147,20 @@ npm run dev
 
 O deploy pode ser feito diretamente pelo Lovable clicando em **Share → Publish**.
 
+## 🔒 Melhorias de Segurança (Pós-MVP)
+
+Itens identificados para implementar após a fase de apresentação:
+
+| # | Item | Dificuldade | Descrição |
+|---|------|:-----------:|-----------|
+| 1 | **Bucket privado + Signed URLs** | Média | Tornar o bucket `multitracks` privado e usar `createSignedUrl()` no lugar de `getPublicUrl()` para evitar acesso não autenticado aos arquivos. |
+| 2 | **CORS restrito na Edge Function** | Fácil | Substituir `Access-Control-Allow-Origin: *` pelo domínio de produção na função `manage-user`. |
+| 3 | **Validação server-side de uploads** | Média | Adicionar validação de tipo/tamanho de arquivo via políticas de storage ou edge function de pré-upload. |
+| 4 | **Leaked password protection** | Fácil | Ativar a proteção contra senhas vazadas no painel do Supabase Auth. |
+| 5 | **Testes de RLS** | Média | Criar testes automatizados para verificar que as políticas RLS bloqueiam acessos não autorizados. |
+
+> **Nota:** Os checks client-side de role (`canWrite`, `ProtectedRoute`) são apenas para UX — toda segurança real é garantida por RLS no banco de dados.
+
 ## 📄 Licença
 
 Projeto privado — uso interno do ministério.
