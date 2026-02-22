@@ -54,7 +54,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border">
       <div className="flex h-14 items-center gap-2 border-b border-border px-4">
         <Music className="h-5 w-5 shrink-0 text-primary" />
-        {!collapsed && <span className="text-sm font-semibold truncate">Multitracks & Escalas</span>}
+        {!collapsed && <span className="text-sm font-semibold truncate">MMVV</span>}
         <button
           onClick={sidebar.toggleSidebar}
           className="ml-auto hidden lg:flex h-7 w-7 items-center justify-center rounded-md hover:bg-accent"
