@@ -2,8 +2,16 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/context/AuthContext";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
+import Login from "./pages/Login";
+import Multitracks from "./pages/Multitracks";
+import Escalas from "./pages/Escalas";
+import Equipes from "./pages/Equipes";
+import Usuarios from "./pages/Usuarios";
+import Logs from "./pages/Logs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -14,11 +22,36 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Navigate to="/multitracks" replace />} />
+              <Route path="/multitracks" element={<Multitracks />} />
+              <Route path="/escalas" element={<Escalas />} />
+              <Route path="/equipes" element={<Equipes />} />
+              <Route
+                path="/usuarios"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <Usuarios />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/logs"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <Logs />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
