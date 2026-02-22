@@ -30,6 +30,11 @@ import { ptBR } from 'date-fns/locale';
 
 const client = supabase as any;
 
+interface SongInfo {
+  name: string;
+  key: string;
+}
+
 interface ServiceRow {
   id: string;
   service_date: string;
@@ -38,7 +43,7 @@ interface ServiceRow {
   worship_leader_name: string;
   dm_name: string | null;
   notes: string | null;
-  song_names: string[];
+  songs: SongInfo[];
 }
 
 const Escalas = () => {
@@ -59,7 +64,7 @@ const Escalas = () => {
 
     const { data, error } = await client
       .from('services')
-      .select('*, team:team_id(name), worship_leader:worship_leader_id(full_name), dm:dm_id(full_name), service_songs(song:song_id(name))')
+      .select('*, team:team_id(name), worship_leader:worship_leader_id(full_name), dm:dm_id(full_name), service_songs(song_key, song:song_id(name))')
       .order('service_date', { ascending: false });
 
     if (!error && data) {
@@ -71,7 +76,9 @@ const Escalas = () => {
         worship_leader_name: r.worship_leader?.full_name || '—',
         dm_name: r.dm?.full_name || null,
         notes: r.notes,
-        song_names: (r.service_songs || []).map((ss: any) => ss.song?.name).filter(Boolean),
+        songs: (r.service_songs || [])
+          .filter((ss: any) => ss.song?.name)
+          .map((ss: any) => ({ name: ss.song.name, key: ss.song_key })),
       })));
     }
     setLoading(false);
@@ -172,9 +179,9 @@ const Escalas = () => {
                   <TableCell>{row.worship_leader_name}</TableCell>
                   <TableCell>{row.dm_name || '—'}</TableCell>
                   <TableCell>
-                    {row.song_names.length > 0 ? (
+                    {row.songs.length > 0 ? (
                       <div className="flex flex-col gap-1">
-                        {row.song_names.map((name, i) => {
+                        {row.songs.map((song, i) => {
                           const colors = [
                             'bg-purple-500/15 text-purple-400',
                             'bg-sky-500/15 text-sky-400',
@@ -189,7 +196,7 @@ const Escalas = () => {
                               key={i}
                               className={`inline-block w-fit rounded-full px-2 py-0.5 text-[11px] font-medium leading-tight ${colors[i % colors.length]}`}
                             >
-                              {name}
+                              {song.name} <span className="opacity-60">({song.key})</span>
                             </span>
                           );
                         })}
@@ -275,9 +282,9 @@ const Escalas = () => {
 
               <div>
                 <span className="text-xs text-muted-foreground">Músicas</span>
-                {viewTarget.song_names.length > 0 ? (
+                {viewTarget.songs.length > 0 ? (
                   <div className="mt-1 flex flex-col gap-1.5">
-                    {viewTarget.song_names.map((name, i) => {
+                    {viewTarget.songs.map((song, i) => {
                       const colors = [
                         'bg-purple-500/15 text-purple-400',
                         'bg-sky-500/15 text-sky-400',
@@ -292,7 +299,7 @@ const Escalas = () => {
                           key={i}
                           className={`inline-block w-fit rounded-full px-2.5 py-1 text-xs font-medium ${colors[i % colors.length]}`}
                         >
-                          {name}
+                          {song.name} <span className="opacity-60">({song.key})</span>
                         </span>
                       );
                     })}
