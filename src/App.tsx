@@ -11,6 +11,7 @@ import Multitracks from "./pages/Multitracks";
 import Escalas from "./pages/Escalas";
 import Equipes from "./pages/Equipes";
 import Usuarios from "./pages/Usuarios";
+import UsuarioForm from "./pages/UsuarioForm";
 import Logs from "./pages/Logs";
 import NotFound from "./pages/NotFound";
 
@@ -36,6 +37,22 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <Usuarios />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/usuarios/novo"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <UsuarioForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/usuarios/:id/editar"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <UsuarioForm />
                   </ProtectedRoute>
                 }
               />
