@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface AuditLogParams {
   userId: string;
   userName: string;
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN';
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'DELETE_FILE' | 'LOGIN';
   entity: string;
   entityId?: string;
   description: string;
