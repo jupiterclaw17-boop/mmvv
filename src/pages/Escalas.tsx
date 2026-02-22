@@ -61,6 +61,7 @@ const Escalas = () => {
   const [deleteTarget, setDeleteTarget] = useState<ServiceRow | null>(null);
   const [viewTarget, setViewTarget] = useState<ServiceRow | null>(null);
   const [viewMultitracks, setViewMultitracks] = useState<MultitrackInfo[]>([]);
+  const [allMultitracks, setAllMultitracks] = useState<MultitrackInfo[]>([]);
   const [deleting, setDeleting] = useState(false);
 
   const canWrite = profile?.role === 'admin' || profile?.role === 'dm';
@@ -87,6 +88,19 @@ const Escalas = () => {
           .filter((ss: any) => ss.song?.name)
           .map((ss: any) => ({ song_id: ss.song_id || ss.song?.id, name: ss.song.name, key: ss.song_key })),
       })));
+      // Fetch all multitracks that have storage_url
+      const allSongIds = (data as any[]).flatMap((r) =>
+        (r.service_songs || []).filter((ss: any) => ss.song_id).map((ss: any) => ss.song_id)
+      );
+      const uniqueSongIds = [...new Set(allSongIds)];
+      if (uniqueSongIds.length > 0) {
+        const { data: mtData } = await client
+          .from('multitracks')
+          .select('song_id, storage_url')
+          .in('song_id', uniqueSongIds)
+          .not('storage_url', 'is', null);
+        if (mtData) setAllMultitracks(mtData as MultitrackInfo[]);
+      }
     }
     setLoading(false);
   }, []);
@@ -213,13 +227,32 @@ const Escalas = () => {
                             'bg-indigo-500/15 text-indigo-400',
                             'bg-teal-500/15 text-teal-400',
                           ];
+                          const mt = allMultitracks.find((m) => m.song_id === song.song_id && m.storage_url);
                           return (
-                            <span
-                              key={i}
-                              className={`inline-block w-fit rounded-full px-2 py-0.5 text-[11px] font-medium leading-tight ${colors[i % colors.length]}`}
-                            >
-                              {song.name} <span className="opacity-60">({song.key})</span>
-                            </span>
+                            <div key={i} className="flex items-center gap-1.5">
+                              <span
+                                className={`inline-block w-fit rounded-full px-2 py-0.5 text-[11px] font-medium leading-tight ${colors[i % colors.length]}`}
+                              >
+                                {song.name} <span className="opacity-60">({song.key})</span>
+                              </span>
+                              {mt?.storage_url && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <a
+                                      href={mt.storage_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      download
+                                      className="text-primary hover:text-primary/80 transition-colors"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <Download className="h-3.5 w-3.5" />
+                                    </a>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Baixar Multitrack</TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
