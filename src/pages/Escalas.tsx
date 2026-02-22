@@ -35,7 +35,7 @@ interface ServiceRow {
   worship_leader_name: string;
   dm_name: string | null;
   notes: string | null;
-  songs_count: number;
+  song_names: string[];
 }
 
 const Escalas = () => {
@@ -55,7 +55,7 @@ const Escalas = () => {
 
     const { data, error } = await client
       .from('services')
-      .select('*, team:team_id(name), worship_leader:worship_leader_id(full_name), dm:dm_id(full_name), service_songs(id)')
+      .select('*, team:team_id(name), worship_leader:worship_leader_id(full_name), dm:dm_id(full_name), service_songs(song:song_id(name))')
       .order('service_date', { ascending: false });
 
     if (!error && data) {
@@ -67,7 +67,7 @@ const Escalas = () => {
         worship_leader_name: r.worship_leader?.full_name || '—',
         dm_name: r.dm?.full_name || null,
         notes: r.notes,
-        songs_count: r.service_songs?.length || 0,
+        song_names: (r.service_songs || []).map((ss: any) => ss.song?.name).filter(Boolean),
       })));
     }
     setLoading(false);
@@ -167,8 +167,23 @@ const Escalas = () => {
                   <TableCell>{row.team_name}</TableCell>
                   <TableCell>{row.worship_leader_name}</TableCell>
                   <TableCell>{row.dm_name || '—'}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="outline">{row.songs_count}</Badge>
+                  <TableCell className="max-w-[250px]">
+                    {row.song_names.length > 0 ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="block truncate cursor-default text-sm">
+                            {row.song_names.join(', ')}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <ul className="list-disc pl-4 space-y-0.5">
+                            {row.song_names.map((name, i) => (
+                              <li key={i}>{name}</li>
+                            ))}
+                          </ul>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : '—'}
                   </TableCell>
                   <TableCell className="max-w-[200px]">
                     {row.notes ? (
