@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { logAudit } from '@/services/logService';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Loader2, CalendarDays } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, CalendarDays, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -18,6 +18,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Tooltip, TooltipContent, TooltipTrigger,
 } from '@/components/ui/tooltip';
@@ -45,6 +48,7 @@ const Escalas = () => {
   const [rows, setRows] = useState<ServiceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<ServiceRow | null>(null);
+  const [viewTarget, setViewTarget] = useState<ServiceRow | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const canWrite = profile?.role === 'admin' || profile?.role === 'dm';
@@ -140,19 +144,19 @@ const Escalas = () => {
               <TableHead>DM</TableHead>
               <TableHead className="text-center">Músicas</TableHead>
               <TableHead>Observações</TableHead>
-              {canWrite && <TableHead className="w-24">Ações</TableHead>}
+              <TableHead className="w-28">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={canWrite ? 8 : 7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin inline mr-2" />Carregando...
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={canWrite ? 8 : 7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   <CalendarDays className="h-8 w-8 mx-auto mb-2 opacity-40" />
                   Nenhuma escala encontrada.
                 </TableCell>
@@ -202,16 +206,24 @@ const Escalas = () => {
                       </Tooltip>
                     ) : '—'}
                   </TableCell>
-                  {canWrite && (
-                    <TableCell>
+                  <TableCell>
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => navigate(`/escalas/${row.id}/editar`)}
+                          onClick={() => setViewTarget(row)}
                           className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                          title="Editar"
+                          title="Visualizar"
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         </button>
+                        {canWrite && (
+                          <button
+                            onClick={() => navigate(`/escalas/${row.id}/editar`)}
+                            className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        )}
                         {canDelete && (
                           <button
                             onClick={() => setDeleteTarget(row)}
@@ -222,14 +234,84 @@ const Escalas = () => {
                           </button>
                         )}
                       </div>
-                    </TableCell>
-                  )}
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      {/* View Dialog */}
+      <Dialog open={!!viewTarget} onOpenChange={() => setViewTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Escala</DialogTitle>
+          </DialogHeader>
+          {viewTarget && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-xs text-muted-foreground">Data</span>
+                  <p className="text-sm font-medium">{formatDate(viewTarget.service_date)}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">Período</span>
+                  <p><Badge variant="secondary">{periodLabel(viewTarget.period)}</Badge></p>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">Equipe</span>
+                  <p className="text-sm font-medium">{viewTarget.team_name}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">Ministro Guia</span>
+                  <p className="text-sm font-medium">{viewTarget.worship_leader_name}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">DM</span>
+                  <p className="text-sm font-medium">{viewTarget.dm_name || '—'}</p>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-xs text-muted-foreground">Músicas</span>
+                {viewTarget.song_names.length > 0 ? (
+                  <div className="mt-1 flex flex-col gap-1.5">
+                    {viewTarget.song_names.map((name, i) => {
+                      const colors = [
+                        'bg-purple-500/15 text-purple-400',
+                        'bg-sky-500/15 text-sky-400',
+                        'bg-emerald-500/15 text-emerald-400',
+                        'bg-amber-500/15 text-amber-400',
+                        'bg-rose-500/15 text-rose-400',
+                        'bg-indigo-500/15 text-indigo-400',
+                        'bg-teal-500/15 text-teal-400',
+                      ];
+                      return (
+                        <span
+                          key={i}
+                          className={`inline-block w-fit rounded-full px-2.5 py-1 text-xs font-medium ${colors[i % colors.length]}`}
+                        >
+                          {name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhuma música</p>
+                )}
+              </div>
+
+              {viewTarget.notes && (
+                <div>
+                  <span className="text-xs text-muted-foreground">Observações</span>
+                  <p className="text-sm mt-0.5 whitespace-pre-wrap">{viewTarget.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
