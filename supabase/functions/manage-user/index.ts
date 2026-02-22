@@ -134,7 +134,8 @@ serve(async (req) => {
           .eq("id", user_id);
 
         if (profileError) {
-          return new Response(JSON.stringify({ error: "Erro ao atualizar perfil." }), {
+          console.error("Profile update error:", profileError);
+          return new Response(JSON.stringify({ error: "Erro ao atualizar perfil. Tente novamente." }), {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -143,9 +144,11 @@ serve(async (req) => {
 
       // Update role in user_roles if changed
       if (role !== undefined) {
-        // Delete existing roles and insert new one
         await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
-        await supabaseAdmin.from("user_roles").insert({ user_id, role });
+        const { error: roleError } = await supabaseAdmin.from("user_roles").insert({ user_id, role });
+        if (roleError) {
+          console.error("Role update error:", roleError);
+        }
       }
 
       // Update password if provided
@@ -155,10 +158,13 @@ serve(async (req) => {
 
       // Update user metadata
       if (full_name || role) {
-        const metadata: Record<string, string> = {};
+        const { data: currentUser } = await supabaseAdmin.auth.admin.getUserById(user_id);
+        const existingMeta = currentUser?.user?.user_metadata || {};
+        const metadata = { ...existingMeta };
         if (full_name) metadata.full_name = full_name;
         if (role) metadata.role = role;
-        await supabaseAdmin.auth.admin.updateUserById(user_id, { user_metadata: metadata });
+        const { error: metaError } = await supabaseAdmin.auth.admin.updateUserById(user_id, { user_metadata: metadata });
+        if (metaError) console.error("Metadata update error:", metaError);
       }
 
       return new Response(JSON.stringify({ success: true }), {

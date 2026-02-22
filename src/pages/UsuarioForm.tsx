@@ -107,8 +107,8 @@ const UsuarioForm = () => {
         if (password) body.password = password;
 
         const { data, error: fnError } = await supabase.functions.invoke('manage-user', { body });
-        if (fnError) throw fnError;
         if (data?.error) throw new Error(data.error);
+        if (fnError) throw fnError;
 
         await logAudit({
           userId: profile!.id,
