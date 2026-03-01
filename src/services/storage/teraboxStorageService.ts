@@ -26,10 +26,21 @@ export const teraboxStorageService: StorageService = {
       }),
     });
 
-    const data = await response.json();
+    const raw = await response.text();
+    let data: any = null;
+    try {
+      data = raw ? JSON.parse(raw) : null;
+    } catch {
+      data = null;
+    }
 
     if (!response.ok || !data?.url) {
-      throw new Error(data?.error || 'Falha no upload para o TeraBox.');
+      const lowerRaw = (raw || '').toLowerCase();
+      if (response.status === 413 || lowerRaw.includes('request entity too large')) {
+        throw new Error('Arquivo muito grande para o endpoint atual. Tente um arquivo menor ou use upload em partes (multipart/chunked).');
+      }
+
+      throw new Error(data?.error || raw || 'Falha no upload para o TeraBox.');
     }
 
     return {
@@ -45,10 +56,16 @@ export const teraboxStorageService: StorageService = {
       body: JSON.stringify({ storagePath }),
     });
 
-    const data = await response.json();
+    const raw = await response.text();
+    let data: any = null;
+    try {
+      data = raw ? JSON.parse(raw) : null;
+    } catch {
+      data = null;
+    }
 
     if (!response.ok) {
-      throw new Error(data?.error || 'Falha ao deletar arquivo no TeraBox.');
+      throw new Error(data?.error || raw || 'Falha ao deletar arquivo no TeraBox.');
     }
   },
 
