@@ -147,6 +147,27 @@ npm run dev
 
 O deploy pode ser feito diretamente pelo Lovable clicando em **Share → Publish**.
 
+### Storage Provider (Supabase ou TeraBox)
+
+A aplicação usa uma camada de abstração (`storageService`) para permitir troca de provider.
+
+- `VITE_STORAGE_PROVIDER="supabase"` (padrão)
+- `VITE_STORAGE_PROVIDER="terabox"` (modo teste)
+
+#### TeraBox (modo teste)
+
+Quando `VITE_STORAGE_PROVIDER="terabox"`, o frontend envia o arquivo para rotas serverless em `/api/terabox/*`.
+
+Configurar no projeto da Vercel (Environment Variables):
+
+- `TERABOX_NDUS`
+- `TERABOX_JS_TOKEN`
+- `TERABOX_APP_ID` (geralmente `250528`)
+- `TERABOX_BDSTOKEN` (opcional)
+- `TERABOX_BROWSER_ID` (opcional)
+
+> Observação: no MVP atual, o upload usa payload base64 via JSON, adequado para testes com arquivos menores.
+
 ## 🔒 Melhorias de Segurança (Pós-MVP)
 
 Itens identificados para implementar após a fase de apresentação:

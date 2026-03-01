@@ -128,7 +128,13 @@ const Multitracks = () => {
   };
 
   const handleDownload = async (row: MultitrackRow) => {
+    if (row.storage_url) {
+      window.open(row.storage_url, '_blank');
+      return;
+    }
+
     if (!row.storage_path) return;
+
     const url = await storageService.getDownloadUrl(row.storage_path);
     window.open(url, '_blank');
   };

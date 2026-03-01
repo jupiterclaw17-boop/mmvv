@@ -10,5 +10,12 @@ export interface StorageService {
   getDownloadUrl(storagePath: string): Promise<string>;
 }
 
-// Exporta a implementação ativa (Supabase Storage no MVP)
-export { supabaseStorageService as storageService } from './storage/supabaseStorageService';
+import { supabaseStorageService } from './storage/supabaseStorageService';
+import { teraboxStorageService } from './storage/teraboxStorageService';
+
+const provider = import.meta.env.VITE_STORAGE_PROVIDER;
+
+// Exporta a implementação ativa por variável de ambiente.
+// Valores suportados: "supabase" (default) | "terabox"
+export const storageService: StorageService =
+  provider === 'terabox' ? teraboxStorageService : supabaseStorageService;
