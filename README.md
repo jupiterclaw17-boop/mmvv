@@ -156,17 +156,20 @@ A aplicação usa uma camada de abstração (`storageService`) para permitir tro
 
 #### TeraBox (modo teste)
 
-Quando `VITE_STORAGE_PROVIDER="terabox"`, o frontend envia o arquivo para rotas serverless em `/api/terabox/*`.
+Quando `VITE_STORAGE_PROVIDER="terabox"`, há dois modos de upload:
 
-Configurar no projeto da Vercel (Environment Variables):
+1. **Uploader externo (VPS) - recomendado para arquivos grandes**
+   - `VITE_TERABOX_UPLOADER_URL`
+   - `VITE_TERABOX_UPLOADER_TOKEN`
 
-- `TERABOX_NDUS`
-- `TERABOX_JS_TOKEN`
-- `TERABOX_APP_ID` (geralmente `250528`)
-- `TERABOX_BDSTOKEN` (opcional)
-- `TERABOX_BROWSER_ID` (opcional)
+2. **Rotas serverless em `/api/terabox/*` (legado)**
+   - `TERABOX_NDUS`
+   - `TERABOX_JS_TOKEN`
+   - `TERABOX_APP_ID` (geralmente `250528`)
+   - `TERABOX_BDSTOKEN` (opcional)
+   - `TERABOX_BROWSER_ID` (opcional)
 
-> Observação: no MVP atual, o upload usa payload base64 via JSON, adequado para testes com arquivos menores.
+> Observação: o modo serverless legado usa base64 e pode limitar uploads grandes no plano free. Para ZIPs maiores, use o uploader externo no VPS.
 
 ## 🔒 Melhorias de Segurança (Pós-MVP)
 
