@@ -107,7 +107,12 @@ const MultitrackForm = () => {
     const f = e.target.files?.[0];
     if (!f) return;
 
-    if (!ACCEPTED_MIME_TYPES.includes(f.type)) {
+    const extension = f.name.toLowerCase().split('.').pop() || '';
+    const acceptedExtensions = ['mp3', 'wav', 'm4a', 'zip'];
+    const mimeAccepted = ACCEPTED_MIME_TYPES.includes(f.type);
+    const extensionAccepted = acceptedExtensions.includes(extension);
+
+    if (!mimeAccepted && !extensionAccepted) {
       toast({ title: 'Formato de arquivo não suportado. Use MP3, WAV, M4A ou ZIP.', variant: 'destructive' });
       e.target.value = '';
       return;
