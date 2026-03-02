@@ -171,6 +171,76 @@ Quando `VITE_STORAGE_PROVIDER="terabox"`, há dois modos de upload:
 
 > Observação: o modo serverless legado usa base64 e pode limitar uploads grandes no plano free. Para ZIPs maiores, use o uploader externo no VPS.
 
+## 📌 Status Atual do Projeto (checkpoint)
+
+> **Branch de trabalho atual:** `feat/terabox-storage-mvp`  
+> **Main não foi alterada** durante estes testes.
+
+### O que foi implementado nesta fase
+
+1. **Provider de storage por configuração**
+   - Arquivo: `src/services/storageService.ts`
+   - `VITE_STORAGE_PROVIDER` define o provider ativo (`supabase` ou `terabox`).
+
+2. **Integração inicial TeraBox via rotas serverless**
+   - Arquivos: `api/terabox/upload.js` e `api/terabox/delete.js`
+   - Objetivo: MVP rápido para validar fluxo.
+   - Limitação encontrada: payload base64 em serverless (erro com arquivos maiores).
+
+3. **Correções de UX/validação de upload**
+   - Arquivo: `src/pages/MultitrackForm.tsx`
+   - Aceite por extensão (`.zip`, `.mp3`, `.wav`, `.m4a`) além de MIME.
+
+4. **Integração com uploader externo (VPS/EasyPanel) para arquivos grandes**
+   - Arquivo: `src/services/storage/teraboxStorageService.ts`
+   - Nova lógica: quando `VITE_TERABOX_UPLOADER_URL` está configurado, upload é feito via `FormData` para uploader externo.
+   - Fallback legado (base64/serverless) permanece apenas para compatibilidade.
+
+### Repositório auxiliar criado para upload externo
+
+- Repo: `jupiterclaw17-boop/terabox-uploader`
+- Papel: receber arquivos grandes no VPS e enviar ao TeraBox sem limite do serverless da Vercel free.
+
+#### Responsabilidades do `terabox-uploader`
+
+- `POST /upload`
+  - recebe multipart (`file`)
+  - envia ao TeraBox
+  - retorna URL de download e path salvo
+- `GET /health`
+  - healthcheck de disponibilidade
+
+#### Ajustes aplicados no uploader
+
+- inclusão de `package-lock.json` para suportar `npm ci`
+- preservação de **nome/extensão original** no upload
+- estratégia de URL de download:
+  - tenta link direto válido primeiro
+  - usa share URL como fallback
+
+### Variáveis de ambiente usadas no app (branch de teste)
+
+- `VITE_STORAGE_PROVIDER=terabox`
+- `VITE_TERABOX_UPLOADER_URL=<url do uploader VPS>`
+- `VITE_TERABOX_UPLOADER_TOKEN=<token do uploader>`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_PROJECT_ID`
+
+### Limitações e comportamento atual
+
+- Upload de arquivos grandes agora funciona via uploader VPS.
+- Download pode abrir página intermediária do TeraBox quando link direto não for validado.
+- Fluxo está funcional para piloto, mas ainda requer validação adicional de UX e estabilidade.
+
+### Próximos passos sugeridos (antes de merge)
+
+1. validar lote maior de uploads e downloads em produção de teste
+2. revisar segurança de token no frontend (`VITE_TERABOX_UPLOADER_TOKEN`)
+3. considerar proxy/autorização server-side para não expor token no cliente
+4. validar exclusão/edição de multitrack ponta a ponta
+5. só então abrir PR de `feat/terabox-storage-mvp` para `main`
+
 ## 🔒 Melhorias de Segurança (Pós-MVP)
 
 Itens identificados para implementar após a fase de apresentação:
